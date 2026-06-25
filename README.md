@@ -1,264 +1,438 @@
 # Banking Experiment Calculator
 
-Веб-приложение на **Streamlit** для проектирования и анализа банковских A/B-пилотов без использования базы данных.
+Streamlit-приложение для проектирования, мониторинга и анализа банковских пилотов и причинных экспериментов.
 
-Приложение помогает последовательно описать пилот, рассчитать требуемую выборку и срок, загрузить результаты эксперимента, проверить качество данных, оценить эффект и выгрузить расчёты в Excel.
+Приложение сочетает:
 
-> **Статус проекта:** MVP. Приложение подходит для продуктовых и клиентских экспериментов, но не заменяет независимую модельную валидацию, требования Model Risk Management и регуляторные процедуры.
+- классический A/B и multi-arm дизайн;
+- анализ уже запущенного пилота;
+- Bayesian и sequential monitoring;
+- variance reduction через CUPED/CUPAC;
+- survival и event-history методы;
+- uplift, policy value и Next Best Action;
+- квазиэкспериментальные дизайны, когда обычная рандомизация невозможна;
+- выгрузку результатов в Excel, HTML и PDF.
+
+> **Статус:** расширенный MVP. Приложение предназначено для аналитического проектирования и первичной оценки пилотов. Оно не заменяет независимую модельную валидацию, Model Risk Management, юридическое согласование и регуляторные процедуры.
 
 ---
 
-## Основные возможности
+## Что реализовано
 
-### 1. Проектирование пилота
+### 1. Проектирование классического пилота
 
-Пошаговый мастер включает:
+Пошаговый мастер позволяет:
 
-- паспорт пилота;
-- описание бизнес-гипотезы;
-- выбор банковской задачи;
-- выбор типа эксперимента;
-- ввод baseline, ожидаемого эффекта, alpha и мощности;
-- расчёт выборки по группам;
-- оценку длительности пилота;
-- сценарии снижения дисперсии;
-- план промежуточных анализов;
-- автоматические рекомендации и предупреждения;
-- выгрузку паспорта и расчётов в Excel.
+- заполнить паспорт пилота;
+- описать бизнес-гипотезу и фактическое воздействие;
+- выбрать бинарную, непрерывную или multi-arm метрику;
+- задать baseline, MDE, alpha, power и доступный трафик;
+- рассчитать выборку и срок;
+- оценить эффект неравного распределения;
+- построить сценарии сокращения срока;
+- подготовить O'Brien-Fleming-подобный interim-план;
+- выгрузить паспорт и расчёты в Excel.
 
-Поддерживаемые варианты проектирования:
+### 2. Анализ A/B и multi-arm результатов
 
-- A/B-тест с бинарной метрикой;
-- A/B-тест с непрерывной метрикой;
-- multi-arm эксперимент с несколькими treatment-ветками и общим контролем;
-- online A/B-тест итоговой uplift/NBA-политики;
-- сценарии CUPED/CUPAC через ожидаемое снижение дисперсии;
-- O’Brien–Fleming-подобный план interim-анализов.
+Поддерживаются:
 
-### 2. Анализ результатов
+- CSV, XLS и XLSX;
+- бинарные и непрерывные outcome;
+- Z-test двух долей;
+- Fisher exact test;
+- Welch t-test;
+- доверительные интервалы;
+- относительный и абсолютный эффект;
+- Sample Ratio Mismatch;
+- Holm, Bonferroni и Benjamini-Hochberg коррекции;
+- базовая uplift-калибровка;
+- Excel-отчёт.
 
-Пользователь может загрузить файл `.xlsx`, `.xls` или `.csv`, выбрать нужные колонки и получить результаты непосредственно в интерфейсе.
+### 3. Bayesian monitoring
 
 Реализованы:
 
-- проверка обязательных колонок;
-- проверка пропусков;
-- поиск дубликатов идентификаторов;
-- проверка состава экспериментальных групп;
-- Sample Ratio Mismatch;
-- анализ бинарной метрики;
-- анализ непрерывной метрики;
-- сравнение нескольких treatment-веток с общим контролем;
-- коррекция множественных сравнений;
-- базовая оценка uplift-калибровки;
-- автоматическая интерпретация результата;
-- выгрузка результатов в Excel.
+- Beta-Binomial анализ двух групп;
+- Jeffreys prior;
+- исторический prior через mean + effective sample size;
+- prior-predictive проверка;
+- sensitivity analysis по нескольким priors;
+- вероятность, что treatment лучше;
+- вероятность достижения заданного минимального эффекта;
+- credible intervals абсолютного и относительного эффекта;
+- predictive probability успеха после добора максимальной выборки;
+- Monte Carlo standard error predictive probability.
 
-### 3. Статистические методы MVP
+### 4. Sequential и exact-sequential
 
-Для бинарных метрик:
+Реализованы:
 
-- Z-тест двух долей;
-- доверительный интервал абсолютного эффекта;
-- относительный эффект;
-- Fisher exact test при малом числе событий.
+- O'Brien-Fleming и Pocock границы;
+- симуляционная Gaussian calibration;
+- анализ накопленных interim-результатов;
+- conditional power;
+- non-binding futility;
+- exact-sequential calibration для Fisher, Boschloo и Barnard;
+- симуляционный контроль общего Type I error при повторных просмотрах;
+- применение calibrated exact threshold к накопленному пути пилота.
 
-Для непрерывных метрик:
+Тяжёлая exact-калибровка запускается в отдельном процессе.
 
-- Welch t-test;
-- доверительный интервал разности средних;
-- относительный эффект;
-- Cohen’s d.
+### 5. CUPED и CUPAC по фактическим данным
 
-Для multi-arm:
+Реализованы:
 
-- Holm correction;
-- Bonferroni correction;
-- Benjamini–Hochberg FDR;
-- единый контроль для нескольких treatment-веток.
+- CUPED/ANCOVA по одному или нескольким pre-period признакам;
+- robust HC3 standard errors;
+- CUPAC с out-of-fold прогнозом outcome;
+- cross-fitting;
+- числовые и категориальные признаки;
+- оценка реального снижения дисперсии;
+- оценка sample-size multiplier;
+- предупреждение, если корректировка увеличивает дисперсию.
 
-Для uplift:
+> Используйте только признаки, сформированные до назначения treatment.
 
-- разбиение клиентов по прогнозному uplift;
-- сравнение treatment и control внутри uplift-групп;
-- predicted uplift versus observed uplift;
-- базовая таблица калибровки.
+### 6. Survival, RMST и non-proportional hazards
+
+Реализованы:
+
+- Kaplan-Meier curves;
+- log-rank test;
+- early- и late-weighted log-rank;
+- Cox proportional hazards;
+- тест proportional hazards;
+- RMST до выбранного горизонта;
+- bootstrap CI разности RMST;
+- milestone survival;
+- предупреждение при non-proportional hazards.
+
+При нарушении PH приложение рекомендует делать главным выводом RMST или milestone, а не единый hazard ratio.
+
+### 7. Competing risks
+
+Реализованы:
+
+- Aalen-Johansen cumulative incidence;
+- CIF по группам;
+- bootstrap CI разности CIF на горизонте;
+- cause-specific Cox;
+- отдельное отображение конкурирующих событий.
+
+### 8. Recurrent events
+
+Реализованы:
+
+- Andersen-Gill counting-process Cox;
+- cluster-robust sandwich SE по субъекту;
+- Poisson GEE;
+- Negative Binomial GEE;
+- rate ratio и hazard ratio.
+
+### 9. Кластерные дизайны
+
+Реализованы:
+
+- design effect с поправкой на ICC;
+- поправка на неодинаковый размер кластеров;
+- inflation на attrition;
+- расчёт примерного числа кластеров;
+- генерация stepped-wedge schedule;
+- генерация switchback schedule;
+- block length и washout;
+- GEE-анализ cluster-period данных;
+- period fixed effects;
+- carryover covariate.
+
+### 10. Квазиэкспериментальные методы
+
+#### Synthetic control
+
+- неотрицательные donor weights;
+- сумма весов равна 1;
+- pre-period RMSE;
+- post-intervention gap;
+- placebo donor analysis.
+
+#### Regression discontinuity
+
+- sharp и fuzzy RDD;
+- local linear / quadratic regression;
+- triangular kernel;
+- bandwidth;
+- reduced-form jump;
+- first-stage jump;
+- local treatment effect.
+
+#### Continuous treatment / dose-response
+
+- spline outcome regression;
+- adjustment по pre-treatment covariates;
+- bootstrap confidence bands;
+- поиск лучшей точки на наблюдаемой dose grid.
+
+### 11. Ranking и contextual bandits
+
+#### Interleaving
+
+- победитель A/B/tie по сессии;
+- exact binomial test;
+- bootstrap confidence interval;
+- cluster bootstrap по пользователю.
+
+#### Contextual bandits
+
+- IPS;
+- SNIPS;
+- doubly robust estimator;
+- deterministic и stochastic target policy;
+- effective sample size importance weights;
+- overlap diagnostics;
+- bootstrap confidence intervals.
+
+### 12. Uplift и policy evaluation
+
+#### Qini / AUUC
+
+- IPW uplift curve;
+- Qini coefficient;
+- AUUC;
+- bootstrap confidence intervals;
+- cluster bootstrap;
+- uplift calibration by bins;
+- predicted versus observed uplift.
+
+#### Doubly robust policy value
+
+- multi-action policy evaluation;
+- cross-fit propensity model;
+- cross-fit outcome models;
+- AIPW/DR value;
+- IPS comparison;
+- policy match rate;
+- effective sample size weights;
+- bootstrap confidence interval.
+
+#### Capacity-aware Next Best Action
+
+- несколько действий и no-action baseline;
+- не более одного действия на клиента;
+- capacity на каждый канал;
+- value и cost columns;
+- contact-fatigue penalty;
+- MILP для умеренных объёмов;
+- greedy fallback для больших файлов;
+- выгрузка клиентских назначений в CSV.
+
+### 13. Отчёты
+
+Результаты текущей сессии можно объединить в:
+
+- Excel workbook;
+- HTML-протокол;
+- PDF-протокол.
+
+Отчёт включает паспорт, табличные результаты, предупреждения и ограничения.
 
 ---
 
 ## Для каких банковских задач подходит
 
-### Хорошо подходит
+### Хорошее покрытие
 
 | Задача | Примеры |
 |---|---|
-| Churn и удержание | удерживающий звонок, персональный оффер, изменение стратегии контакта |
-| Продажи и propensity | новая модель выбора клиента, cross-sell, up-sell |
-| Коммуникации | SMS, push, email, звонок, несколько каналов с общим контролем |
-| Маркетинговые кампании | оффер против контроля, несколько вариантов предложения |
-| Uplift и NBA | online-проверка итоговой политики против текущей политики |
-| CLTV-политики | выбор клиентов для удержания или дополнительного сервиса |
-| Рекомендации | новая выдача или порядок предложений против текущего варианта |
-| AI-ассистенты | время выполнения, доля завершённых задач, число исправлений, пользовательская оценка |
-| Операционные интерфейсы | новый процесс или интерфейс против существующего |
+| Churn и удержание | звонок, оффер, новая политика удержания |
+| Продажи и propensity | cross-sell, up-sell, выбор клиентов |
+| Коммуникации | SMS, push, email, звонок, multi-arm |
+| Uplift и NBA | Qini/AUUC, policy value, capacity constraints |
+| CLTV-политики | выбор клиентов для воздействия |
+| Рекомендации и ranking | A/B и interleaving |
+| Коллекшн | survival, recurrent events, cluster/operator effects |
+| AI-ассистенты | время, качество, конверсия, repeated observations |
+| Операционные процессы | cluster-period, stepped-wedge, switchback |
+| Pricing и лимиты | dose-response внутри допустимой области |
+| Пороговые политики | regression discontinuity |
+| Внедрение без рандомизации | synthetic control |
+| Contextual bandits | offline IPS/SNIPS/DR evaluation |
 
-### Подходит с оговорками
+### Подходит с существенными оговорками
 
-| Задача | Основное ограничение |
+| Задача | Ограничение |
 |---|---|
-| Коллекшн | необходимо учитывать повторные контакты, операторов, долгий горизонт и юридические ограничения |
-| Fraud | нельзя ослаблять защиту; возможны задержанные метки и зависимость транзакций |
-| Кредитный андеррайтинг | эксперимент допустим только внутри разрешённой риск-политики |
-| Pricing и лимиты | текущий MVP не моделирует непрерывный treatment и price elasticity |
-| Ranking и поиск | обычный A/B поддерживается, но interleaving пока отсутствует |
-| Uplift-модели | доступна базовая калибровка, но не полный Qini/AUUC и policy-value контур |
-| Multi-arm коммуникации | поддерживаются сравнения веток, но нет адаптивного перераспределения трафика |
+| Fraud | adversarial adaptation, graph interference и delayed labels требуют отдельного дизайна |
+| AML | неполные labels и investigator feedback loop |
+| Кредитный андеррайтинг | тест только внутри риск-аппетита и разрешённой политики |
+| Персонализированный pricing | требуется проверка fairness, monotonicity и legal constraints |
+| Гео- и сетевые эффекты | возможен spillover между единицами рандомизации |
+| Очень большие MILP | приложение переключается на greedy approximation |
 
-### Пока не предназначен
+### Не является основной валидацией
 
-Приложение не является инструментом основной валидации для:
+Приложение не заменяет специализированную валидацию для:
 
-- PD, LGD, EAD и CCF;
+- PD, LGD, EAD, CCF;
 - IFRS 9 и резервирования;
-- VaR, Expected Shortfall, XVA и рыночного риска;
-- ALM и управления ликвидностью;
+- VaR, Expected Shortfall и XVA;
+- ALM и ликвидности;
 - ICAAP и стресс-тестирования;
-- моделей капитала;
-- макроэкономических моделей;
 - чистых forecasting-моделей без управляющего воздействия;
-- регуляторной валидации внутренних моделей;
-- полноценной оценки безопасности и качества Generative AI.
-
-Для этих задач обычно нужны backtesting, calibration, temporal validation, stress testing, benchmarking, sensitivity analysis и другие процедуры, а не только A/B-тест.
+- макроэкономических моделей;
+- полной безопасности и compliance-валидации Generative AI.
 
 ---
 
-## Пользовательский сценарий
+## Режимы приложения
 
-### Режим «Проектирование пилота»
+### Проектирование пилота
 
-1. Заполнить паспорт пилота.
-2. Выбрать тип задачи и дизайн.
-3. Ввести исходные параметры.
-4. Рассчитать выборку и срок.
-5. Просмотреть рекомендации и риски.
-6. Скачать Excel с паспортом и расчётами.
+Простой пошаговый мастер для стандартного A/B или multi-arm.
 
-### Режим «Анализ результатов»
+### Анализ результатов
 
-1. Подготовить обезличенный Excel или CSV.
-2. Загрузить файл в приложение.
-3. Выбрать колонки группы, результата и идентификатора.
-4. Указать контрольную группу и тип метрики.
-5. Запустить анализ.
-6. Проверить качество данных, эффект и статистические предупреждения.
-7. Скачать Excel-отчёт.
+Загрузка итогового CSV/XLSX и классический статистический анализ.
+
+### Расширенные методы
+
+Отдельный selector содержит:
+
+1. Bayesian monitoring;
+2. Sequential и exact-sequential;
+3. CUPED/CUPAC;
+4. Survival/RMST/non-PH;
+5. Competing risks;
+6. Recurrent events;
+7. Cluster/stepped-wedge/switchback;
+8. Synthetic control;
+9. RDD;
+10. Interleaving;
+11. Dose-response;
+12. Contextual bandits;
+13. Qini/AUUC;
+14. DR policy value;
+15. Capacity-aware NBA;
+16. HTML/PDF/Excel protocol.
 
 ---
 
-## Формат входных данных
+## Форматы входных данных
 
-### Минимальный формат для A/B
+В `assets/advanced_input_templates.xlsx` находятся отдельные листы с примерами для всех продвинутых методов.
 
-| client_id | group | outcome |
-|---|---|---:|
-| client_001 | control | 0 |
-| client_002 | treatment | 1 |
+### Sequential
 
-Где:
+```text
+x_control | n_control | x_treatment | n_treatment
+```
 
-- `client_id` — обезличенный уникальный идентификатор;
-- `group` — экспериментальная группа;
-- `outcome` — целевая метрика.
+Одна строка — один накопленный interim-анализ.
 
-Для бинарной метрики `outcome` должен принимать значения `0` и `1`.
+### CUPED/CUPAC
 
-### Формат для multi-arm
+```text
+client_id | treatment | outcome | preperiod_metric | risk_score | segment
+```
 
-| client_id | group | outcome |
-|---|---|---:|
-| client_001 | control | 0 |
-| client_002 | sms | 1 |
-| client_003 | push | 0 |
-| client_004 | call | 1 |
+### Survival
 
-### Формат для uplift
+```text
+client_id | group | duration | event
+```
 
-| client_id | treatment | outcome | predicted_uplift |
-|---|---:|---:|---:|
-| client_001 | 0 | 0 | 0.013 |
-| client_002 | 1 | 1 | 0.041 |
+`event=0` — цензурирование, `event=1` — событие.
 
-Где:
+### Competing risks
 
-- `treatment` — назначение воздействия: `0` или `1`;
-- `predicted_uplift` — прогноз индивидуального эффекта;
-- `outcome` — наблюдаемый результат.
+```text
+client_id | group | duration | event_type
+```
 
-### Дополнительные поля
+`event_type=0` — цензурирование; `1` — событие интереса; `2+` — competing events.
 
-| Поле | Назначение |
-|---|---|
-| `event_date` | дата наблюдения или события |
-| `preperiod_metric` | метрика до эксперимента для будущего CUPED/CUPAC-анализа |
-| `treatment` | флаг воздействия для uplift |
-| `predicted_uplift` | прогноз uplift-модели |
+### Recurrent events
 
-Готовые файлы находятся в каталоге `assets/`:
+```text
+client_id | start | stop | event | treatment
+```
 
-- `pilot_data_template.xlsx` — шаблон;
-- `pilot_sample_data.xlsx` — демонстрационный пример.
+### Cluster-period
+
+```text
+cluster | period | treatment | outcome | carryover
+```
+
+### Synthetic control
+
+```text
+unit | time | outcome
+```
+
+### Regression discontinuity
+
+```text
+client_id | running_variable | outcome | actual_treatment
+```
+
+### Uplift
+
+```text
+client_id | treatment | outcome | predicted_uplift | propensity | cluster_id
+```
+
+### Policy value
+
+```text
+client_id | observed_action | target_action | reward | behavior_propensity | features...
+```
+
+### Contextual bandits
+
+```text
+client_id | logged_action | target_action | reward | behavior_propensity | q_action_1 | q_action_2 ...
+```
+
+### Capacity-aware NBA
+
+```text
+client_id | value_no_action | value_sms | value_push | value_call | contact_fatigue
+```
 
 ---
 
 ## Установка
 
-Требуется Python 3.11+; Docker-образ проекта использует Python 3.12.
+Требуется Python 3.11+.
 
 ### Windows
-
-Запустите:
 
 ```bat
 run_windows.bat
 ```
 
-Скрипт создаст виртуальное окружение, установит зависимости и запустит приложение.
-
-### Linux и macOS
+### Linux / macOS
 
 ```bash
 chmod +x run_linux_mac.sh
 ./run_linux_mac.sh
 ```
 
-### Ручная установка
+### Ручной запуск
 
 ```bash
 python -m venv .venv
-```
-
-Активация в Linux/macOS:
-
-```bash
 source .venv/bin/activate
+pip install -r requirements.txt
+streamlit run app.py
 ```
 
-Активация в Windows:
+Windows activation:
 
 ```bat
 .venv\Scripts\activate
 ```
 
-Установка и запуск:
-
-```bash
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-streamlit run app.py
-```
-
-После запуска приложение доступно по адресу:
+Открыть:
 
 ```text
 http://localhost:8501
@@ -266,46 +440,32 @@ http://localhost:8501
 
 ---
 
-## Запуск через Docker
+## Docker
 
 ```bash
 docker build -t banking-experiment-calculator .
 docker run --rm -p 8501:8501 banking-experiment-calculator
 ```
 
-После запуска откройте:
-
-```text
-http://localhost:8501
-```
-
-Dockerfile содержит healthcheck Streamlit по маршруту `/_stcore/health`.
-
 ---
 
 ## Тесты
-
-Запуск:
 
 ```bash
 pytest -q
 ```
 
-Или:
+Тесты покрывают:
 
-```bash
-make test
-```
-
-Текущий набор тестов проверяет:
-
-- расчёт бинарного дизайна;
-- расчёт непрерывного дизайна;
-- multi-arm дизайн;
-- анализ бинарного пилота;
-- формирование Excel-отчёта;
-- uplift-анализ;
-- основной пользовательский сценарий Streamlit.
+- классический дизайн и анализ;
+- Bayesian и predictive probability;
+- Gaussian и exact sequential;
+- CUPED/CUPAC;
+- survival, competing и recurrent events;
+- cluster, RDD, synthetic control и dose-response;
+- Qini/AUUC, DR policy value, bandits и NBA;
+- HTML, PDF и Excel;
+- smoke test Streamlit-мастера.
 
 ---
 
@@ -314,182 +474,106 @@ make test
 ```text
 banking_experiment_mvp/
 ├── app.py
+├── advanced_ui.py
 ├── experiment_core/
-│   ├── __init__.py
-│   ├── design.py
 │   ├── analysis.py
-│   ├── recommendations.py
-│   └── excel_report.py
+│   ├── design.py
+│   ├── bayesian.py
+│   ├── sequential.py
+│   ├── variance_reduction.py
+│   ├── survival.py
+│   ├── causal_designs.py
+│   ├── uplift_advanced.py
+│   ├── bandits_ranking.py
+│   ├── background.py
+│   ├── excel_report.py
+│   └── reporting.py
 ├── assets/
 │   ├── pilot_data_template.xlsx
-│   └── pilot_sample_data.xlsx
+│   ├── pilot_sample_data.xlsx
+│   └── advanced_input_templates.xlsx
 ├── notebooks/
-│   └── AB_Experiment_Calculator_Banking_Universal.ipynb
 ├── tests/
-│   ├── test_core.py
-│   └── test_app_smoke.py
-├── .streamlit/
-│   └── config.toml
 ├── requirements.txt
 ├── Dockerfile
-├── Makefile
-├── run_windows.bat
-├── run_linux_mac.sh
-├── pytest.ini
 └── README.md
 ```
 
-### Основные модули
+---
 
-| Модуль | Назначение |
-|---|---|
-| `app.py` | Streamlit-интерфейс и пошаговые сценарии |
-| `design.py` | расчёт дизайна и требуемой выборки |
-| `analysis.py` | проверка данных и статистический анализ |
-| `recommendations.py` | понятные рекомендации и интерпретация |
-| `excel_report.py` | формирование Excel-выгрузки |
-| `notebooks/` | расширенная исследовательская версия калькулятора |
+## Архитектурные ограничения MVP
+
+### Нет базы данных
+
+- данные и результаты живут в текущей Streamlit-сессии;
+- после рестарта сервера они не восстанавливаются;
+- для сохранения используйте Excel/HTML/PDF.
+
+### Фоновые задачи
+
+- exact и тяжёлый uplift bootstrap могут выполняться в отдельном процессе;
+- очередь хранится только в памяти приложения;
+- нет Celery/RQ, persistent queue и recovery после рестарта;
+- максимальное число worker-процессов ограничено.
+
+### Методологические ограничения
+
+- causal assumptions не проверяются автоматически полностью;
+- synthetic control не устраняет одновременные внешние шоки;
+- RDD требует отсутствия манипулирования около cutoff;
+- dose-response зависит от observed confounders и overlap;
+- DR не спасает при одновременной ошибке propensity и outcome model;
+- contextual bandit evaluation нестабилен при больших weights;
+- Qini/AUUC должны считаться на независимых или out-of-fold predictions;
+- switchback требует достаточного washout;
+- stepped-wedge чувствителен к временным трендам;
+- competing-risk методы отвечают на разные estimands;
+- HR не должен быть единственным выводом при non-PH.
 
 ---
 
-## Зависимости
-
-Основной стек:
-
-- Streamlit;
-- pandas;
-- NumPy;
-- SciPy;
-- statsmodels;
-- XlsxWriter;
-- openpyxl;
-- pytest.
-
-Точные диапазоны версий указаны в `requirements.txt`.
-
----
-
-## Хранение данных
-
-MVP не использует базу данных.
-
-- Загруженные файлы обрабатываются в рамках текущей Streamlit-сессии.
-- Результаты отображаются в интерфейсе.
-- Для сохранения пользователь скачивает Excel-отчёт.
-- После перезапуска или потери сессии введённые параметры могут быть утрачены.
-
-### Требования к безопасности
+## Безопасность данных
 
 Не загружайте:
 
 - ФИО;
-- номера телефонов;
+- телефоны;
 - email;
-- номера счетов и карт;
+- номера счетов и договоров;
 - паспортные данные;
-- ИНН и другие прямые идентификаторы;
-- банковскую тайну без разрешённого контура обработки.
+- иные прямые идентификаторы.
 
-Используйте обезличенные или технические идентификаторы.
-
-Для промышленного внедрения потребуются:
-
-- корпоративная аутентификация;
-- роли и разграничение доступа;
-- аудит действий;
-- защищённое файловое хранилище;
-- журнал версий методики;
-- фиксация параметров до старта эксперимента;
-- контроль срока хранения данных.
+Используйте обезличенные технические идентификаторы.
 
 ---
 
-## Методологические ограничения
+## Что логично добавить после MVP
 
-Приложение не должно использоваться как автоматический генератор решения «внедрять / не внедрять» без проверки аналитиком.
-
-Перед интерпретацией результата необходимо проверить:
-
-- корректность рандомизации;
-- Sample Ratio Mismatch;
-- полноту данных;
-- одинаковое окно наблюдения;
-- фактическую доставку treatment;
-- бизнес-значимость эффекта;
-- guardrail-метрики;
-- множественные сравнения;
-- соответствие анализа заранее утверждённому протоколу.
-
-Нельзя:
-
-- менять primary metric после просмотра результатов;
-- увеличивать MDE только ради сокращения срока;
-- останавливать обычный fixed-horizon тест при первом `p < 0.05`;
-- исключать неудобные сегменты после анализа;
-- смешивать exploratory и confirmatory выводы;
-- считать отсутствие статистической значимости доказательством отсутствия эффекта.
-
----
-
-## Ограничения текущего MVP
-
-Пока не реализованы в веб-интерфейсе:
-
-- полный Bayesian-анализ;
-- exact-sequential калибровка;
-- фактический CUPED/CUPAC по загруженным данным;
-- survival и RMST;
-- non-proportional hazards;
-- competing risks;
-- recurrent events;
-- кластерные и stepped-wedge дизайны;
-- switchback experiments;
-- synthetic control;
-- regression discontinuity;
-- interleaving для ranking;
-- continuous-treatment и dose-response;
-- contextual bandits;
-- полноценные Qini/AUUC с доверительными интервалами;
-- doubly robust policy value;
-- оптимизация коммуникаций при capacity constraints;
-- тяжёлые фоновые симуляции;
-- база проектов и история версий.
-
-Часть продвинутых методов представлена в исследовательском ноутбуке в каталоге `notebooks/`, но не подключена к MVP-интерфейсу.
-
----
-
-## Roadmap
-
-Приоритетные направления развития:
-
-1. Полноценный CUPED/CUPAC по загруженным данным.
-2. Bayesian monitoring и predictive probability.
-3. Sequential analysis результатов пилота.
-4. Survival, RMST и competing risks.
-5. Qini, AUUC и bootstrap для uplift.
-6. Doubly robust policy value.
-7. Capacity-aware Next Best Action.
-8. Кластерные, switchback и stepped-wedge дизайны.
-9. Автоматическое формирование PDF/HTML-протокола.
-10. Корпоративный SSO, роли и аудит.
-11. Реестр пилотов и версионирование параметров.
+- SSO и роли;
+- persistent job queue;
+- хранение версий протокола;
+- audit log;
+- полноценные stochastic target policies в UI;
+- generalized random forests для CATE;
+- TMLE;
+- Gray test и Fine-Gray regression;
+- randomization inference для кластерных дизайнов;
+- geo-experiments;
+- network interference;
+- fairness constraints в NBA/pricing;
+- отдельный контур model validation для PD/LGD/EAD и forecasting.
 
 ---
 
 ## Дисклеймер
 
-Результаты калькулятора носят аналитический характер. Они не заменяют:
+Результаты приложения являются аналитической поддержкой решения. Перед промышленным внедрением необходимо проверить:
 
-- независимую валидацию моделей;
-- решение риск-подразделения;
-- юридическую и комплаенс-экспертизу;
-- проверку требований к персональным данным;
-- утверждённую методику проведения эксперимента;
-- требования регулятора и внутреннего Model Risk Management.
-
----
-
-## Лицензия
-
-Лицензия в текущей версии репозитория не указана. Перед публичным распространением добавьте подходящий файл `LICENSE` и проверьте допустимость публикации кода и методологии.
+- качество и происхождение данных;
+- корректность единицы рандомизации;
+- соответствие предпосылкам метода;
+- правила остановки;
+- guardrail-метрики;
+- юридические ограничения;
+- риск-аппетит;
+- независимую валидацию.

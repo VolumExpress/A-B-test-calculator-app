@@ -30,3 +30,12 @@ def test_streamlit_app_design_flow():
         item.value == "Шаг 4. Результат проектирования"
         for item in at.subheader
     )
+
+
+def test_streamlit_advanced_mode_opens():
+    app_path = Path(__file__).resolve().parents[1] / "app.py"
+    at = AppTest.from_file(str(app_path), default_timeout=30).run()
+    at.sidebar.radio[0].set_value("Расширенные методы").run()
+    assert not at.exception
+    assert any(item.value == "Расширенные методы" for item in at.title)
+    assert any(item.label == "Выберите метод" for item in at.selectbox)

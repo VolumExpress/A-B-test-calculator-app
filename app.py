@@ -19,13 +19,14 @@ from experiment_core.design import (
 )
 from experiment_core.excel_report import build_excel_report
 from experiment_core.recommendations import design_recommendations, result_interpretation
+from advanced_ui import render_advanced
 
 
 APP_DIR = Path(__file__).resolve().parent
 ASSETS = APP_DIR / "assets"
 
 st.set_page_config(
-    page_title="Banking Experiment Calculator",
+    page_title="Banking Experiment Calculator — Advanced MVP",
     page_icon="🧪",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -119,7 +120,7 @@ def read_uploaded_file(uploaded) -> pd.DataFrame:
 
 
 def render_header() -> None:
-    st.title("🧪 Banking Experiment Calculator — MVP")
+    st.title("🧪 Banking Experiment Calculator — Advanced MVP")
     st.caption(
         "Пошаговое проектирование и анализ банковских пилотов. "
         "Данные не сохраняются в БД: загрузка и выгрузка выполняются через Excel/CSV."
@@ -130,23 +131,27 @@ def render_sidebar() -> None:
     st.sidebar.header("Режим работы")
     mode = st.sidebar.radio(
         "Выберите задачу",
-        ["Проектирование пилота", "Анализ результатов"],
+        ["Проектирование пилота", "Анализ результатов", "Расширенные методы"],
         key="mode",
     )
     if mode == "Проектирование пилота":
         step = st.session_state.design_step
         labels = ["Паспорт", "Тип дизайна", "Параметры", "Результат"]
-    else:
+        st.sidebar.progress(step / len(labels))
+        st.sidebar.write(f"Шаг {step} из {len(labels)}: **{labels[step-1]}**")
+    elif mode == "Анализ результатов":
         step = st.session_state.analysis_step
         labels = ["Загрузка", "Настройка", "Результат"]
-    st.sidebar.progress(step / len(labels))
-    st.sidebar.write(f"Шаг {step} из {len(labels)}: **{labels[step-1]}**")
+        st.sidebar.progress(step / len(labels))
+        st.sidebar.write(f"Шаг {step} из {len(labels)}: **{labels[step-1]}**")
+    else:
+        st.sidebar.success("Расширенные методы: выберите модуль в основном окне.")
     st.sidebar.divider()
     st.sidebar.info(
-        "MVP не использует базу данных. Для продолжения работы в другой день "
-        "скачайте итоговый Excel-файл."
+        "Приложение не использует базу данных. Результаты и фоновые задачи живут только "
+        "в текущей сессии; сохраняйте итоговые Excel/HTML/PDF-файлы."
     )
-    if st.sidebar.button("Начать заново", width="stretch"):
+    if mode != "Расширенные методы" and st.sidebar.button("Начать заново", width="stretch"):
         reset_flow("design" if mode == "Проектирование пилота" else "analysis")
         st.rerun()
 
@@ -629,8 +634,10 @@ def main() -> None:
     render_sidebar()
     if st.session_state.mode == "Проектирование пилота":
         {1: design_step_1, 2: design_step_2, 3: design_step_3, 4: design_step_4}[st.session_state.design_step]()
-    else:
+    elif st.session_state.mode == "Анализ результатов":
         {1: analysis_step_1, 2: analysis_step_2, 3: analysis_step_3}[st.session_state.analysis_step]()
+    else:
+        render_advanced()
 
 
 if __name__ == "__main__":
